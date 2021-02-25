@@ -1,0 +1,10 @@
+package com.tonygui.multimedia.jnihub;
+
+public class NativeMultiMediaProcessor {
+    // Used to load the 'native-lib' library on application startup.
+    static {
+        System.loadLibrary("native-video-sniffer-lib");
+    }
+
+    public native static String getCodecInfo();
+}
