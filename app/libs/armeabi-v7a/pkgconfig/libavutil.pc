@@ -1,0 +1,14 @@
+prefix=/Users/tonygui/ffmpeg/android/armeabi-v7a
+exec_prefix=${prefix}
+libdir=/Users/tonygui/ffmpeg/android/libs/armeabi-v7a
+includedir=/Users/tonygui/ffmpeg/android/armeabi-v7a/include
+
+Name: libavutil
+Description: FFmpeg utility library
+Version: 56.66.100
+Requires: 
+Requires.private: 
+Conflicts:
+Libs: -L${libdir}  -lavutil 
+Libs.private: -pthread -lm
+Cflags: -I${includedir}
