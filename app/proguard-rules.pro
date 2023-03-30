@@ -22,3 +22,5 @@
 -keepclasseswithmembers class * {
     native <methods>;
 }
+
+-keep class com.tonygui.multimedia.jnihub.CodecListener

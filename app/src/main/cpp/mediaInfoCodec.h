@@ -23,7 +23,8 @@ public:
     SimpleMediaInfoCodec();
     ~SimpleMediaInfoCodec();
     void parseVideoSorce(std::string *videoSource);
-    void decodeH264(char* filePath);
+    void decodeH264(JNIEnv *env, char *filePath, jobject listener);
+    static int register_Codec_listener(JNIEnv* env);
 };
 
 #endif //VIDEOSNIFFER_MEDIAINFOCODEC_H

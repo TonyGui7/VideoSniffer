@@ -35,10 +35,20 @@ Java_com_tonygui_multimedia_jnihub_NativeMultiMediaProcessor_parseVideoSource(
 extern "C" JNIEXPORT void JNICALL
 Java_com_tonygui_multimedia_jnihub_NativeMultiMediaProcessor_softdecode(
         JNIEnv *env,
-        jclass, jstring videoSource
+        jclass, jstring videoSource, jobject listener
         ) {
 
     char* filePath = const_cast<char *>(env->GetStringUTFChars(videoSource, NULL));
     SimpleMediaInfoCodec *codec = new SimpleMediaInfoCodec();
-    codec->decodeH264(filePath);
+    codec->decodeH264(env, filePath, listener);
+}
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_tonygui_multimedia_jnihub_NativeMultiMediaProcessor_initCodec(JNIEnv *env,jclass){
+    int ret = SimpleMediaInfoCodec::register_Codec_listener(env);
+    if (ret == 0) {
+        fprintf(stderr, "initCodec succeed!\n");
+    } else{
+        fprintf(stderr, "initCodec failed!\n");
+    }
 }
