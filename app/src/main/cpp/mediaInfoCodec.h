@@ -23,6 +23,7 @@ public:
     SimpleMediaInfoCodec();
     ~SimpleMediaInfoCodec();
     void parseVideoSorce(std::string *videoSource);
+    void decodeH264(char* filePath);
 };
 
 #endif //VIDEOSNIFFER_MEDIAINFOCODEC_H

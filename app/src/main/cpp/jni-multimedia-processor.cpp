@@ -31,3 +31,14 @@ Java_com_tonygui_multimedia_jnihub_NativeMultiMediaProcessor_parseVideoSource(
     codec->parseVideoSorce(&result);
     return env->NewStringUTF(result.c_str());
 }
+
+extern "C" JNIEXPORT void JNICALL
+Java_com_tonygui_multimedia_jnihub_NativeMultiMediaProcessor_softdecode(
+        JNIEnv *env,
+        jclass, jstring videoSource
+        ) {
+
+    char* filePath = const_cast<char *>(env->GetStringUTFChars(videoSource, NULL));
+    SimpleMediaInfoCodec *codec = new SimpleMediaInfoCodec();
+    codec->decodeH264(filePath);
+}

@@ -9,4 +9,7 @@ public class NativeMultiMediaProcessor {
     public native static String getCodecInfo();
 
     public native static String parseVideoSource(String source);
+
+
+    public native static void softdecode(String source);
 }
