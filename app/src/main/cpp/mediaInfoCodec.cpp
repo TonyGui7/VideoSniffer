@@ -13,7 +13,16 @@ extern "C" {
 #include "libswscale/swscale.h"
 }
 
-static struct codec_callback_offset{
+#define DEST_IMG_YUV "/storage/emulated/0/Android/data/com.tonygui.multimedia.videosniffer/files/dest_img_yuv.jpg"
+#define DEST_IMG_Y "/storage/emulated/0/Android/data/com.tonygui.multimedia.videosniffer/files/dest_img_y.jpg"
+#define DEST_IMG_U "/storage/emulated/0/Android/data/com.tonygui.multimedia.videosniffer/files/dest_img_u.jpg"
+#define DEST_IMG_V "/storage/emulated/0/Android/data/com.tonygui.multimedia.videosniffer/files/dest_img_v.jpg"
+
+#define DEST_VIDEO_Y "/storage/emulated/0/Android/data/com.tonygui.multimedia.videosniffer/files/dest_video_y.yuv"
+#define DEST_VIDEO_U "/storage/emulated/0/Android/data/com.tonygui.multimedia.videosniffer/files/dest_video_u.yuv"
+#define DEST_VIDEO_V "/storage/emulated/0/Android/data/com.tonygui.multimedia.videosniffer/files/dest_video_v.yuv"
+
+static struct codec_callback_offset {
     jmethodID mFrameAviable;
 } gCodecOffsets;
 
@@ -40,16 +49,16 @@ SimpleMediaInfoCodec::~SimpleMediaInfoCodec() {
 }
 
 void SimpleMediaInfoCodec::parseVideoSorce(std::string *videoSource) {
-    if(videoSource == NULL) {
+    if (videoSource == NULL) {
         return;
     }
 
     avcodec_register_all();
 }
 
-const char* const kListenerPathName = "com.tonygui.multimedia.jnihub.CodecListener";
+const char *const kListenerPathName = "com.tonygui.multimedia.jnihub.CodecListener";
 
-int SimpleMediaInfoCodec::register_Codec_listener(JNIEnv* env) {
+int SimpleMediaInfoCodec::register_Codec_listener(JNIEnv *env) {
     jclass clzz = env->FindClass("com/tonygui/multimedia/jnihub/CodecListener");
     if (clzz == NULL) {
         return -1;
@@ -112,7 +121,7 @@ int process_frame(AVFormatContext *fmt_ctx,
     return got_frame || *packet_new;
 }
 
-jbyteArray char2JByteArray(JNIEnv* env, unsigned char* buf){
+jbyteArray char2JByteArray(JNIEnv *env, unsigned char *buf) {
     jbyteArray result;
     size_t size = strlen(reinterpret_cast<const char *const>(buf));
     if (size > 0) {
@@ -127,12 +136,12 @@ void SimpleMediaInfoCodec::decodeH264(JNIEnv *env, char *filePath, jobject liste
     // 1. register all codecs, demux and protocols
     av_register_all();
 
-    // 2. 得到一个ffmpeg的上下文（上下文里面封装了视频的比特率，分辨率等等信息...非常重要）
+    // 2. 得到一个ffmpeg的上下文（上下文里面封装了视频的比特率，分辨率等等信息）
     AVFormatContext *pFmtContext = avformat_alloc_context();
     if (!pFmtContext) {
         fprintf(stderr, "could not allocate avformat context.\n");
         free(pFmtContext);
-        return ;
+        return;
     }
 
     // 3. 打开视频
@@ -146,7 +155,7 @@ void SimpleMediaInfoCodec::decodeH264(JNIEnv *env, char *filePath, jobject liste
     if (avformat_find_stream_info(pFmtContext, NULL) < 0) {
         fprintf(stderr, "get the information failed.\n");
         free(pFmtContext);
-        return ;
+        return;
     }
 
     // 5. 用来记住视频流的索引
@@ -155,7 +164,7 @@ void SimpleMediaInfoCodec::decodeH264(JNIEnv *env, char *filePath, jobject liste
     if (video_stream_idx < 0) {
         fprintf(stderr, "can not find video stream.\n");
         free(pFmtContext);
-        return ;
+        return;
     }
 
     // 6. 获取编码器上下文和编码器
@@ -164,7 +173,7 @@ void SimpleMediaInfoCodec::decodeH264(JNIEnv *env, char *filePath, jobject liste
         fprintf(stderr, "get codec context failed.\n");
         free(pFmtContext);
         free(pCodecCtx);
-        return ;
+        return;
     }
 
     if (avcodec_parameters_to_context(pCodecCtx,
@@ -173,11 +182,12 @@ void SimpleMediaInfoCodec::decodeH264(JNIEnv *env, char *filePath, jobject liste
         fprintf(stderr, "get codec parameters failed.\n");
         free(pFmtContext);
         free(pCodecCtx);
-        return ;
+        return;
     }
 
-    SwsContext* sws_context = sws_getContext(pCodecCtx->width, pCodecCtx->height,
-                                             pCodecCtx->pix_fmt, pCodecCtx->width, pCodecCtx->height,
+    SwsContext *sws_context = sws_getContext(pCodecCtx->width, pCodecCtx->height,
+                                             pCodecCtx->pix_fmt, pCodecCtx->width,
+                                             pCodecCtx->height,
                                              AV_PIX_FMT_YUV420P, SWS_BICUBIC, NULL, NULL, NULL);
     // 7. 打开解码器
     AVCodec *pCodec = avcodec_find_decoder(pCodecCtx->codec_id);
@@ -188,8 +198,17 @@ void SimpleMediaInfoCodec::decodeH264(JNIEnv *env, char *filePath, jobject liste
         return;
     }
 
+    FILE *videoY = fopen(DEST_VIDEO_Y, "wb+");
+    FILE *videoU = fopen(DEST_VIDEO_U, "wb+");
+    FILE *videoV = fopen(DEST_VIDEO_V, "wb+");
+
+    FILE *imgYUV = fopen(DEST_IMG_YUV, "wb+");
+    FILE *imgY = fopen(DEST_IMG_Y, "wb+");
+    FILE *imgU = fopen(DEST_IMG_U, "wb+");
+    FILE *imgV = fopen(DEST_IMG_V, "wb+");
+
     // 8. 解码
-    AVPacket *pkt = (AVPacket *)av_malloc(sizeof(AVPacket));
+    AVPacket *pkt = (AVPacket *) av_malloc(sizeof(AVPacket));
     av_init_packet(pkt);
     AVFrame *pFrame = av_frame_alloc();
     AVFrame *pFrameYUV = av_frame_alloc();
@@ -200,28 +219,32 @@ void SimpleMediaInfoCodec::decodeH264(JNIEnv *env, char *filePath, jobject liste
     buf[1] = new unsigned char[pCodecCtx->width * pCodecCtx->height / 4];
     buf[2] = new unsigned char[pCodecCtx->width * pCodecCtx->height / 4];
 
+    jbyteArray yData;
+    jbyteArray uData;
+    jbyteArray vData;
     while (!av_read_frame(pFmtContext, pkt)) {
         if (pkt->stream_index != video_stream_idx) {
             continue;
         }
 
         int packet_new = 1;
-        while (process_frame(pFmtContext, pCodecCtx, pFmtContext->streams[video_stream_idx]->codecpar,
+        while (process_frame(pFmtContext, pCodecCtx,
+                             pFmtContext->streams[video_stream_idx]->codecpar,
                              pFrame, pkt, &packet_new) > 0) {
             frameCount++;
             if (pFrame->format != AV_PIX_FMT_YUV420P) {
                 sws_scale(sws_context, (uint8_t const *const *) pFrame->data,
                           pFrame->linesize, 0, pCodecCtx->height, pFrameYUV->data,
                           pFrameYUV->linesize);//将帧数据转为yuv420p
-                          pFrameYUV->data[0];
-            } else{
+                pFrameYUV->data[0];
+            } else {
                 pFrameYUV = pFrame;
             }
 
-            buf[0] = pFrameYUV->data[0];
+//            buf[0] = pFrameYUV->data[0];
             memcpy(buf[0], pFrameYUV->data[0], pCodecCtx->width * pCodecCtx->height); //Y
-            memcpy(buf[1], pFrameYUV->data[1], pCodecCtx->width * pCodecCtx->height/4); //U
-            memcpy(buf[2], pFrameYUV->data[2], pCodecCtx->width * pCodecCtx->height/4); //V
+            memcpy(buf[1], pFrameYUV->data[1], pCodecCtx->width * pCodecCtx->height / 4); //U
+            memcpy(buf[2], pFrameYUV->data[2], pCodecCtx->width * pCodecCtx->height / 4); //V
 
 
 //            jbyteArray yData;
@@ -249,19 +272,39 @@ void SimpleMediaInfoCodec::decodeH264(JNIEnv *env, char *filePath, jobject liste
 //                env->SetByteArrayRegion(vData, 0, vSize, reinterpret_cast<const jbyte *>(vBuf));
 //            }
 
-            jbyteArray yData = char2JByteArray(env, buf[0]);
-            jbyteArray uData = char2JByteArray(env, buf[1]);
-            jbyteArray vData = char2JByteArray(env, buf[2]);
-            if (gCodecOffsets.mFrameAviable != NULL) {
-                env->CallVoidMethod(listener, gCodecOffsets.mFrameAviable, pCodecCtx->width, pCodecCtx->height
-                        , yData, uData, vData);
+            yData = char2JByteArray(env, buf[0]);
+            uData = char2JByteArray(env, buf[1]);
+            vData = char2JByteArray(env, buf[2]);
+            fwrite(buf[0], 1, pCodecCtx->width * pCodecCtx->height, videoY);
+            fwrite(buf[1], 1, pCodecCtx->width * pCodecCtx->height/4, videoU);
+            fwrite(buf[2], 1, pCodecCtx->width * pCodecCtx->height/4, videoV);
+            if (frameCount == 35) {
+                fwrite(buf[0], 1, pCodecCtx->width * pCodecCtx->height, imgY);
+                fwrite(buf[1], 1, pCodecCtx->width * pCodecCtx->height/4, imgU);
+                fwrite(buf[2], 1, pCodecCtx->width * pCodecCtx->height/4, imgV);
+
+                fwrite(buf[0], 1, pCodecCtx->width * pCodecCtx->height, imgYUV);
+                fwrite(buf[1], 1, pCodecCtx->width * pCodecCtx->height/4, imgYUV);
+                fwrite(buf[2], 1, pCodecCtx->width * pCodecCtx->height/4, imgYUV);
             }
+//            if (gCodecOffsets.mFrameAviable != NULL) {
+//                env->CallVoidMethod(listener, gCodecOffsets.mFrameAviable, pCodecCtx->width,
+//                                    pCodecCtx->height, yData, uData, vData);
+//            }
             env->DeleteLocalRef(yData);
             env->DeleteLocalRef(uData);
             env->DeleteLocalRef(vData);
         };
         av_packet_unref(pkt);
     }
+
+    fclose(videoV);
+    fclose(videoU);
+    fclose(videoY);
+    fclose(imgYUV);
+    fclose(imgV);
+    fclose(imgY);
+    fclose(imgU);
 
     //Flush remaining frames that are cached in the decoder
     int packet_new = 1;
@@ -275,7 +318,7 @@ void SimpleMediaInfoCodec::decodeH264(JNIEnv *env, char *filePath, jobject liste
             sws_scale(sws_context, (uint8_t const *const *) pFrame->data,
                       pFrame->linesize, 0, pCodecCtx->height, pFrameYUV->data,
                       pFrameYUV->linesize);//将帧数据转为yuv420p
-        } else{
+        } else {
             pFrameYUV = pFrame;
         }
 
